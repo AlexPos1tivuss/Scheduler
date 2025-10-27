@@ -12,7 +12,7 @@ import {
   type Lesson, type InsertLesson,
   type ScheduleGenerationRun, type InsertScheduleGenerationRun
 } from "@shared/schema";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -140,6 +140,11 @@ class DrizzleStorage implements IStorage {
     return result[0];
   }
 
+  async updateStudent(id: string, student: Partial<InsertStudent>): Promise<Student | undefined> {
+    const result = await db.update(students).set(student).where(eq(students.id, id)).returning();
+    return result[0];
+  }
+
   async getAllStudents(): Promise<Student[]> {
     return db.select().from(students);
   }
@@ -255,6 +260,11 @@ class DrizzleStorage implements IStorage {
     return result[0];
   }
 
+  async updateLesson(id: string, lesson: Partial<InsertLesson>): Promise<Lesson | undefined> {
+    const result = await db.update(lessons).set(lesson).where(eq(lessons.id, id)).returning();
+    return result[0];
+  }
+
   async deleteLesson(id: string): Promise<boolean> {
     const result = await db.delete(lessons).where(eq(lessons.id, id)).returning();
     return result.length > 0;
@@ -265,9 +275,7 @@ class DrizzleStorage implements IStorage {
     teacherId?: string;
     startDate?: Date;
     endDate?: Date;
-  }): Promise<Lesson[]> {
-    let query = db.select().from(lessons);
-
+  }): Promise<any[]> {
     const conditions = [];
     if (filters.groupId) {
       conditions.push(eq(lessons.groupId, filters.groupId));
@@ -282,11 +290,48 @@ class DrizzleStorage implements IStorage {
       conditions.push(lte(lessons.endAt, filters.endDate));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
-    }
+    const lessonsData = conditions.length > 0
+      ? await db.select().from(lessons).where(and(...conditions))
+      : await db.select().from(lessons);
 
-    return query;
+    // Manually join the data
+    const result = await Promise.all(
+      lessonsData.map(async (lesson) => {
+        const [subject] = lesson.subjectId 
+          ? await db.select().from(subjects).where(eq(subjects.id, lesson.subjectId))
+          : [null];
+        const [group] = lesson.groupId
+          ? await db.select().from(groups).where(eq(groups.id, lesson.groupId))
+          : [null];
+        const [audience] = lesson.audienceId
+          ? await db.select().from(audiences).where(eq(audiences.id, lesson.audienceId))
+          : [null];
+        
+        let teacher = null;
+        if (lesson.teacherId) {
+          const [teacherData] = await db.select().from(teachers).where(eq(teachers.id, lesson.teacherId));
+          if (teacherData) {
+            const [userData] = await db.select().from(users).where(eq(users.id, teacherData.userId));
+            teacher = {
+              ...teacherData,
+              firstName: userData?.firstName,
+              middleName: userData?.middleName,
+              lastName: userData?.lastName,
+            };
+          }
+        }
+
+        return {
+          ...lesson,
+          subject,
+          group,
+          teacher,
+          audience,
+        };
+      })
+    );
+
+    return result;
   }
 
   async deleteAllLessons(): Promise<void> {

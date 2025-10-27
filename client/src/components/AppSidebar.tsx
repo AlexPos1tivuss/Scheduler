@@ -31,9 +31,7 @@ export function AppSidebar({ role, userName }: AppSidebarProps) {
     { title: "Группы", url: "/groups", icon: Users },
     { title: "Предметы", url: "/subjects", icon: BookOpen },
     { title: "Аудитории", url: "/audiences", icon: DoorOpen },
-    { title: "Шаблоны занятий", url: "/templates", icon: FileSpreadsheet },
     { title: "Расписание", url: "/schedule", icon: Calendar },
-    { title: "Генерация", url: "/generate", icon: Sparkles },
   ];
 
   const teacherMenuItems = [

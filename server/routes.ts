@@ -17,7 +17,9 @@ import {
   insertGroupSchema, 
   insertSubjectSchema, 
   insertAudienceSchema,
-  insertLessonTemplateSchema 
+  insertLessonTemplateSchema,
+  insertLessonSchema,
+  insertStudentSchema
 } from "@shared/schema";
 import { generateSchedule } from "./schedule-generator";
 
@@ -467,6 +469,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= LESSONS ROUTES (CRUD) =============
+  
+  app.post("/api/lessons", requireAuth as any, requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertLessonSchema.parse(req.body);
+      const newLesson = await storage.createLesson(validatedData);
+      res.json(newLesson);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Неверные данные", details: error.errors });
+      }
+      console.error("Create lesson error:", error);
+      res.status(500).json({ error: "Ошибка при создании занятия" });
+    }
+  });
+
+  app.put("/api/lessons/:id", requireAuth as any, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertLessonSchema.partial().parse(req.body);
+      const updatedLesson = await storage.updateLesson(id, validatedData);
+      
+      if (!updatedLesson) {
+        return res.status(404).json({ error: "Занятие не найдено" });
+      }
+
+      res.json(updatedLesson);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Неверные данные", details: error.errors });
+      }
+      console.error("Update lesson error:", error);
+      res.status(500).json({ error: "Ошибка при обновлении занятия" });
+    }
+  });
+
+  app.delete("/api/lessons/:id", requireAuth as any, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteLesson(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Занятие не найдено" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Delete lesson error:", error);
+      res.status(500).json({ error: "Ошибка при удалении занятия" });
+    }
+  });
+
   // ============= TEACHERS ROUTES =============
   
   app.get("/api/teachers", requireAuth as any, async (req, res) => {
@@ -488,6 +542,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Get students error:", error);
       res.status(500).json({ error: "Ошибка при получении студентов" });
+    }
+  });
+
+  app.put("/api/students/:id", requireAuth as any, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertStudentSchema.partial().parse(req.body);
+      const updatedStudent = await storage.updateStudent(id, validatedData);
+      
+      if (!updatedStudent) {
+        return res.status(404).json({ error: "Студент не найден" });
+      }
+
+      res.json(updatedStudent);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Неверные данные", details: error.errors });
+      }
+      console.error("Update student error:", error);
+      res.status(500).json({ error: "Ошибка при обновлении студента" });
     }
   });
 

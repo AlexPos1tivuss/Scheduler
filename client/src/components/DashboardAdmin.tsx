@@ -48,9 +48,9 @@ export default function DashboardAdmin() {
                 <span className="font-medium">168 из 168</span>
               </div>
             </div>
-            <Button className="w-full" data-testid="button-generate">
+            <Button className="w-full" onClick={() => window.location.href = "/schedule"} data-testid="button-generate">
               <Sparkles className="w-4 h-4 mr-2" />
-              Сгенерировать расписание
+              Перейти к расписанию
             </Button>
           </CardContent>
         </Card>
