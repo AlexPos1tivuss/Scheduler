@@ -4,20 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { login: loginMutation, loginError, isLoggingIn } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { login, password });
     if (!login || !password) {
-      setError("Пожалуйста, заполните все поля");
       return;
     }
-    setError("");
+    loginMutation({ login, password });
   };
 
   return (
@@ -50,6 +51,8 @@ export default function LoginPage() {
                   onChange={(e) => setLogin(e.target.value)}
                   data-testid="input-login"
                   className="h-11"
+                  disabled={isLoggingIn}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -62,26 +65,36 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   data-testid="input-password"
                   className="h-11"
+                  disabled={isLoggingIn}
+                  required
                 />
               </div>
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="text-sm text-destructive"
-                  data-testid="text-error"
-                >
-                  {error}
-                </motion.p>
+              {loginError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription data-testid="text-error">
+                    {loginError.message || "Ошибка при входе в систему"}
+                  </AlertDescription>
+                </Alert>
               )}
               <Button
                 type="submit"
                 className="w-full h-11"
                 data-testid="button-login"
+                disabled={isLoggingIn}
               >
-                Войти в систему
+                {isLoggingIn ? "Вход..." : "Войти в систему"}
               </Button>
             </form>
+
+            <div className="mt-6 p-4 bg-muted rounded-lg text-xs space-y-2">
+              <p className="font-semibold">Тестовые учетные записи:</p>
+              <div className="space-y-1">
+                <p><strong>Администратор:</strong> Иванов Иван Иванович / admin123</p>
+                <p><strong>Преподаватель:</strong> Петрова Анна Сергеевна / teacher123</p>
+                <p><strong>Студент:</strong> Тестовый Студент1 Петрович / student123</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

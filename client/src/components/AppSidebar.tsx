@@ -13,6 +13,7 @@ import {
 import { Calendar, Users, BookOpen, DoorOpen, Settings, LayoutDashboard, FileSpreadsheet, LogOut, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import ThemeToggle from "./ThemeToggle";
+import { useAuth } from "@/hooks/use-auth";
 
 type UserRole = "admin" | "teacher" | "student";
 
@@ -22,6 +23,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ role, userName }: AppSidebarProps) {
+  const { logout } = useAuth();
+
   const adminMenuItems = [
     { title: "Главная", url: "/", icon: LayoutDashboard },
     { title: "Пользователи", url: "/users", icon: Users },
@@ -94,7 +97,13 @@ export function AppSidebar({ role, userName }: AppSidebarProps) {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" size="icon" className="rounded-full" data-testid="button-logout">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full" 
+            data-testid="button-logout"
+            onClick={() => logout()}
+          >
             <LogOut className="w-4 h-4" />
           </Button>
         </div>
